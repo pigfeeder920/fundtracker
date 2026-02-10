@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>养嘟小助手</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --border: #2d3a4d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --rise: #f85149;
+      --fall: #3fb950;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans SC', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+    .input-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .input-group input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.65rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 14px;
+    }
+    .input-group input::placeholder { color: var(--text-muted); }
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .btn {
+      padding: 0.65rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    th.sortable:hover { color: var(--accent); }
+    th.sortable .sort-icon { opacity: 0.5; margin-left: 2px; font-size: 12px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(88, 166, 255, 0.05); }
+    .rise { color: var(--rise); }
+    .fall { color: var(--fall); }
+    .amount-input {
+      width: 120px;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+    .amount-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .change-amount {
+      font-weight: 500;
+      min-width: 80px;
+      display: inline-block;
+    }
+    .summary-bar {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .summary-bar .rise { color: var(--rise); }
+    .summary-bar .fall { color: var(--fall); }
+    .empty-state {
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .api-config {
+      margin-bottom: 1rem;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .api-config input {
+      width: 200px;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+    }
+    .api-config-divider { margin: 0 0.5rem; color: var(--border); }
+    .upload-section {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      background: var(--card);
+    }
+    .upload-label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .upload-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .upload-input { position: absolute; width: 0; height: 0; opacity: 0; }
+    .btn-upload { background: var(--border); color: var(--text); margin: 0; }
+    .upload-hint { font-size: 12px; color: var(--text-muted); }
+    .json-input {
+      flex: 1;
+      min-width: 280px;
+      padding: 0.65rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+    }
+    .json-input:focus { outline: none; border-color: var(--accent); }
+    .json-input::placeholder { color: var(--text-muted); }
+    .batch-json-wrap { margin-top: 1rem; }
+    .batch-json-wrap textarea[readonly] { opacity: 0.95; }
+    .ocr-status { margin-top: 0.5rem; font-size: 13px; min-height: 1.2em; }
+    .ocr-status.loading { color: var(--accent); }
+    .ocr-status.error { color: var(--fall); }
+    .ocr-status.ok { color: var(--rise); }
+  </style>
+</head>
+<body>
+  <h1>养嘟小助手</h1>
+  <div class="api-config">
+<!--    <label>基金 API：</label>-->
+<!--    <input type="text" id="apiUrl" placeholder="https://your-api/v1/fund?codes=">-->
+<!--    <span class="api-config-divider">|</span>-->
+    <label>通义千问 API Key：</label>
+    <input type="password" id="dashscopeKey" placeholder="阿里云 DashScope Key">
+  </div>
+  <div class="input-group">
+    <input type="text" id="codesInput" placeholder="输入基金代码，逗号隔开，如：024162,001986">
+    <button class="btn btn-primary" onclick="fetchFunds()">查询</button>
+  </div>
+  <div class="upload-section">
+    <label class="upload-label">从 JSON 添加基金</label>
+    <div class="input-group" style="align-items: flex-start;">
+      <textarea id="jsonInput" class="json-input" rows="4" placeholder='粘贴 JSON 数组，格式：[{"name":"基金名称","amount":金额}, ...]'></textarea>
+      <button type="button" class="btn btn-primary" onclick="addFundsFromJson()">添加</button>
+    </div>
+    <span id="jsonStatus" class="ocr-status" style="display:block; margin-top:0.25rem;"></span>
+  </div>
+  <div class="upload-section">
+    <label class="upload-label">上传持仓截图（识别基金名称与持仓金额）</label>
+    <div class="upload-row">
+      <input type="file" id="imageInput" accept="image/*" class="upload-input" multiple />
+      <label for="imageInput" class="btn btn-upload">选择图片</label>
+      <span class="upload-hint">支持多张图片(Mac/Android/iOS本地相册或拍照)，解析后按基金名称汇总金额</span>
+    </div>
+    <div id="ocrStatus" class="ocr-status"></div>
+    <div id="batchJsonWrap" class="batch-json-wrap" style="display: none;">
+      <label class="upload-label">汇总结果 JSON（所有图片解析后按名称汇总）</label>
+      <textarea id="batchJsonResult" class="json-input" rows="8" readonly></textarea>
+      <div class="input-group" style="margin-top: 0.5rem;">
+        <button type="button" class="btn btn-secondary" onclick="copyBatchJson()">复制 JSON</button>
+        <span id="batchJsonCopyHint" class="ocr-status" style="margin-left: 0.5rem;"></span>
+      </div>
+    </div>
+  </div>
+  <div id="summaryBar" class="summary-bar" style="display: none;">
+    持仓合计：<span id="summaryAmount">-</span>
+    　当日盈亏：<span id="summaryChange">-</span>
+    　盈亏比例：<span id="summaryRatio">-</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>代码</th>
+          <th>名称</th>
+          <th class="sortable" onclick="toggleSort('change')" title="点击排序">当日涨跌额<span class="sort-icon" id="sortIconChange"></span></th>
+          <th class="sortable" onclick="toggleSort('growth')" title="点击排序">当日涨幅<span class="sort-icon" id="sortIconGrowth"></span></th>
+          <th class="sortable" onclick="toggleSort('amount')" title="点击排序">持仓金额<span class="sort-icon" id="sortIconAmount"></span></th>
+          <th>净值日期</th>
+          <th>类型</th>
+        </tr>
+      </thead>
+      <tbody id="fundList"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state">输入基金代码后点击查询，或使用示例数据</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script>
+    const MOCK_DATA = {
+      code: 200,
+      data: [
+        {
+          code: "024162",
+          name: "大成北证50成份指数发起式C",
+          type: "指数型",
+          netWorth: 1.0397,
+          expectWorth: 1.0531,
+          expectGrowth: "1.29",
+          dayGrowth: "0.84",
+          netWorthDate: "2026-02-06"
+        },
+        {
+          code: "001986",
+          name: "前海开源人工智能主题混合A",
+          type: "混合型",
+          netWorth: 1.2494,
+          expectWorth: 1.2886,
+          expectGrowth: "3.14",
+          dayGrowth: "-2.08",
+          netWorthDate: "2026-02-06"
+        }
+      ]
+    };
+
+    let currentFundList = [];
+    let fundDataList = [];
+    let fundDataLoaded = false;
+    let sortBy = null;
+    let sortOrder = 'desc';
+
+    async function ensureFundDataLoaded() {
+      if (fundDataLoaded) return;
+      try {
+        const res = await fetch(new URL('funddata.json', window.location.href));
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data)) {
+          fundDataList = json.data.map(row => ({
+            code: row[0] || '',
+            name: (row[2] || '').trim(),
+            type: row[3] || null
+          }));
+        }
+        fundDataLoaded = true;
+      } catch (e) {
+        console.warn('加载 funddata.json 失败，将无法根据名称匹配基金代码', e);
+      }
+    }
+
+    function parseAmount(str) {
+      const s = str != null ? String(str).trim() : '';
+      if (s === '') return 0;
+      const n = parseFloat(s.replace(/,/g, ''));
+      return isNaN(n) ? 0 : n;
+    }
+
+    function roundAmount(x) {
+      const n = parseAmount(x);
+      return Math.round(n * 100) / 100;
+    }
+
+    function formatAmount(val) {
+      if (val === 0) return '0.00';
+      const abs = Math.abs(val);
+      const sign = val >= 0 ? '+' : '-';
+      return sign + abs.toFixed(2);
+    }
+
+    function normalizeName(s) {
+      return String(s || '').trim().replace(/\s+/g, '').replace(/[·\-－—\s]/g, '');
+    }
+
+    function getBaseFundName(name) {
+      return String(name || '').trim()
+        .replace(/\s+[AC](类)?(份额)?\s*$/gi, '')
+        .replace(/\s+I+\s*$/gi, '')
+        .trim() || name;
+    }
+
+    function fuzzyScore(a, b) {
+      if (!a || !b) return 0;
+      if (a === b) return 1;
+      if (a.includes(b) || b.includes(a)) return 1;
+      const shorter = a.length <= b.length ? a : b;
+      const longer = a.length <= b.length ? b : a;
+      let j = 0;
+      for (let i = 0; i < longer.length && j < shorter.length; i++) {
+        if (longer[i] === shorter[j]) j++;
+      }
+      return j / shorter.length;
+    }
+
+    function matchFundName(ocrName, fundList) {
+      const n = normalizeName(ocrName);
+      if (!n) return null;
+      let best = null;
+      let bestScore = 0;
+      const CONTAIN_SCORE = 1;
+      const FUZZY_THRESHOLD = 0.55;
+      for (const f of fundList) {
+        const fn = normalizeName(f.name);
+        if (!fn) continue;
+        if (fn.includes(n) || n.includes(fn)) return f;
+        const score = fuzzyScore(n, fn);
+        if (score >= FUZZY_THRESHOLD && score > bestScore) {
+          bestScore = score;
+          best = f;
+        }
+      }
+      return best;
+    }
+
+    function toggleSort(field) {
+      if (sortBy === field) {
+        sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortBy = field;
+        sortOrder = field === 'amount' ? 'desc' : 'desc';
+      }
+      updateSortIcons();
+      renderTable(currentFundList);
+    }
+
+    function updateSortIcons() {
+      const g = document.getElementById('sortIconGrowth');
+      const a = document.getElementById('sortIconAmount');
+      const c = document.getElementById('sortIconChange');
+      if (g) g.textContent = sortBy === 'growth' ? (sortOrder === 'asc' ? ' ↑' : ' ↓') : '';
+      if (a) a.textContent = sortBy === 'amount' ? (sortOrder === 'asc' ? ' ↑' : ' ↓') : '';
+      if (c) c.textContent = sortBy === 'change' ? (sortOrder === 'asc' ? ' ↑' : ' ↓') : '';
+    }
+
+    function updateSummary() {
+      const bar = document.getElementById('summaryBar');
+      const amountEl = document.getElementById('summaryAmount');
+      const changeEl = document.getElementById('summaryChange');
+      const ratioEl = document.getElementById('summaryRatio');
+      if (!bar || !amountEl || !changeEl || !ratioEl) return;
+      const rows = document.querySelectorAll('#fundList tr[data-idx]');
+      let totalAmount = 0;
+      let totalChange = 0;
+      rows.forEach(tr => {
+        const input = tr.querySelector('.amount-input');
+        const growthRaw = input ? input.dataset.growth : '';
+        const amount = parseAmount(input ? input.value : '');
+        const growth = parseFloat(growthRaw ?? 0);
+        totalAmount += amount;
+        totalChange += amount * (growth / 100);
+      });
+      if (rows.length === 0) {
+        bar.style.display = 'none';
+        return;
+      }
+      bar.style.display = 'block';
+      amountEl.textContent = totalAmount.toFixed(2) + ' 元';
+      amountEl.className = '';
+      const changeClass = totalChange >= 0 ? 'rise' : 'fall';
+      changeEl.textContent = (totalChange >= 0 ? '+' : '') + totalChange.toFixed(2) + ' 元';
+      changeEl.className = changeClass;
+      const ratio = totalAmount > 0 ? (totalChange / totalAmount * 100) : 0;
+      ratioEl.textContent = (ratio >= 0 ? '+' : '') + ratio.toFixed(2) + '%';
+      ratioEl.className = changeClass;
+    }
+
+    function renderTable(funds) {
+      currentFundList = funds || [];
+      const tbody = document.getElementById('fundList');
+      const empty = document.getElementById('emptyState');
+      if (!funds?.length) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        document.getElementById('summaryBar').style.display = 'none';
+        updateSortIcons();
+        return;
+      }
+      empty.style.display = 'none';
+      let list = [...funds];
+      if (sortBy === 'amount') {
+        list.sort((a, b) => {
+          const va = parseAmount(a._amount);
+          const vb = parseAmount(b._amount);
+          return sortOrder === 'desc' ? vb - va : va - vb;
+        });
+      } else if (sortBy === 'growth') {
+        list.sort((a, b) => {
+          const ga = parseFloat(a.expectGrowth ?? a.dayGrowth ?? NaN);
+          const gb = parseFloat(b.expectGrowth ?? b.dayGrowth ?? NaN);
+          const va = isNaN(ga) ? -Infinity : ga;
+          const vb = isNaN(gb) ? -Infinity : gb;
+          return sortOrder === 'desc' ? vb - va : va - vb;
+        });
+      } else if (sortBy === 'change') {
+        list.sort((a, b) => {
+          const growthA = parseFloat(a.expectGrowth ?? a.dayGrowth ?? 0);
+          const growthB = parseFloat(b.expectGrowth ?? b.dayGrowth ?? 0);
+          const changeA = parseAmount(a._amount) * (growthA / 100);
+          const changeB = parseAmount(b._amount) * (growthB / 100);
+          return sortOrder === 'desc' ? changeB - changeA : changeA - changeB;
+        });
+      }
+      tbody.innerHTML = list.map((f, i) => {
+        const growthVal = f.expectGrowth != null ? f.expectGrowth : f.dayGrowth;
+        const hasGrowth = growthVal != null;
+        const growth = parseFloat(growthVal ?? 0);
+        const growthStr = growthVal ?? '0';
+        const growthText = hasGrowth ? ((growth >= 0 ? '+' : '') + growthStr + '%') : '-';
+        const growthClass = hasGrowth ? (growth >= 0 ? 'rise' : 'fall') : '';
+        const dateVal = f.expectWorthDate != null ? f.expectWorthDate : f.netWorthDate;
+        const amountVal = (f._amount != null && f._amount !== '') ? roundAmount(f._amount).toFixed(2) : '';
+        return `
+          <tr data-idx="${i}">
+            <td>${f.code || '-'}</td>
+            <td>${f.name}</td>
+            <td><span class="change-amount ${growthClass}" id="change-${i}">${hasGrowth ? '' : '-'}</span></td>
+            <td class="${growthClass}">${growthText}</td>
+            <td>
+              <input type="text" class="amount-input" placeholder="输入金额" 
+                data-idx="${i}" data-growth="${hasGrowth ? growth : ''}" 
+                oninput="calcChange(${i})" value="${amountVal}">
+            </td>
+            <td>${dateVal || '-'}</td>
+            <td>${f.type || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+
+      list.forEach((f, i) => { if (f._amount != null && f._amount !== '') calcChange(i); });
+      updateSortIcons();
+      updateSummary();
+    }
+
+    function calcChange(idx) {
+      const row = document.querySelector(`tr[data-idx="${idx}"]`);
+      if (!row) return;
+      const input = row.querySelector('.amount-input');
+      const span = document.getElementById(`change-${idx}`);
+      if (!input || !span) return;
+      const growthRaw = input.dataset.growth;
+      if (growthRaw === '' || growthRaw === undefined) {
+        span.textContent = '-';
+        span.className = 'change-amount';
+        return;
+      }
+      const amount = parseAmount(input.value);
+      const growth = parseFloat(growthRaw || 0);
+      const change = amount * (growth / 100);
+      span.textContent = amount ? formatAmount(change) : '-';
+      span.className = 'change-amount ' + (change >= 0 ? 'rise' : 'fall');
+      updateSummary();
+    }
+
+    async function fetchFunds() {
+      const codesStr = document.getElementById('codesInput').value?.trim();
+      if (!codesStr) {
+        alert('请输入基金代码');
+        return;
+      }
+      const codes = codesStr.split(/[,，\s]+/).map(c => c.trim()).filter(Boolean);
+<!--      const apiUrl = document.getElementById('apiUrl').value?.trim();-->
+      const apiUrl = "https://api.autostock.cn/v1/fund?code=";
+
+      if (apiUrl) {
+        const url = apiUrl.endsWith('=') ? apiUrl + codes.join(',') : apiUrl + '?codes=' + codes.join(',');
+        try {
+          const res = await fetch(url);
+          const json = await res.json();
+          if (json.code === 200 && json.data) {
+            renderTable(json.data);
+          } else {
+            alert('接口返回异常：' + (json.message || JSON.stringify(json)));
+          }
+        } catch (e) {
+          alert('请求失败：' + e.message);
+        }
+        return;
+      }
+
+      const mock = MOCK_DATA.data.filter(f => codes.includes(f.code));
+      if (mock.length === 0) {
+        renderTable(MOCK_DATA.data.map(f => ({ ...f })));
+        document.getElementById('codesInput').value = MOCK_DATA.data.map(f => f.code).join(',');
+      } else {
+        renderTable(mock);
+      }
+    }
+
+    document.getElementById('imageInput').addEventListener('change', async function(e) {
+      const files = Array.from(e.target?.files || []).filter(f => f.type.startsWith('image/'));
+      if (!files.length) {
+        setOcrStatus('请选择至少一张图片', 'error');
+        e.target.value = '';
+        return;
+      }
+      const key = document.getElementById('dashscopeKey').value?.trim();
+      if(!key){
+      key = "sk-e46131b8b26a4f9bb6480ec7ff2114ca";
+      }
+<!--      const key = "sk-e46131b8b26a4f9bb6480ec7ff2114ca";-->
+      const total = files.length;
+      setOcrStatus('已选择 ' + total + ' 张图片，开始识别…', 'loading');
+      const allItems = [];
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          setOcrStatus('正在 OCR 第 ' + (i + 1) + '/' + total + ' 张…', 'loading');
+          const ocrText = await runTesseractOcr(file);
+          if (!ocrText?.trim()) continue;
+          setOcrStatus('正在解析第 ' + (i + 1) + '/' + total + ' 张…', 'loading');
+          let items = [];
+          if (key) {
+            try {
+              items = await qwenParseFunds(key, ocrText);
+            } catch (apiErr) {
+              const msg = String(apiErr.message || apiErr);
+              if (msg.includes('402') || msg.includes('Insufficient') || msg.includes('余额') || msg.includes('401')) {
+                items = localParseFundsFromOcr(ocrText);
+              } else if (/Failed to fetch|Connection refused|ERR_CONNECTION_REFUSED|NetworkError|Load failed/i.test(msg)) {
+                setOcrStatus('无法连接代理。请先在终端运行: node fund-tracker-proxy.js（在项目目录下）', 'error');
+                e.target.value = '';
+                return;
+              } else {
+                throw apiErr;
+              }
+            }
+          } else {
+            items = localParseFundsFromOcr(ocrText);
+          }
+          allItems.push(...items);
+        }
+        if (!allItems.length) {
+          setOcrStatus('未解析到基金与金额，请换更清晰的持仓截图', 'error');
+          e.target.value = '';
+          return;
+        }
+        const merged = aggregateItemsByName(allItems);
+        const summaryJson = JSON.stringify(merged, null, 2);
+        const wrap = document.getElementById('batchJsonWrap');
+        const resultEl = document.getElementById('batchJsonResult');
+        if (wrap && resultEl) {
+          resultEl.value = summaryJson;
+          wrap.style.display = 'block';
+        }
+        await mergeOcrIntoTable(merged);
+        setOcrStatus('共 ' + total + ' 张图片，识别 ' + allItems.length + ' 条，汇总为 ' + merged.length + ' 只基金，已输出 JSON 并合并到表格', 'ok');
+      } catch (err) {
+        setOcrStatus('识别失败：' + (err.message || String(err)), 'error');
+      }
+      e.target.value = '';
+    });
+
+    function copyBatchJson() {
+      const el = document.getElementById('batchJsonResult');
+      const hint = document.getElementById('batchJsonCopyHint');
+      if (!el || !el.value) return;
+      navigator.clipboard.writeText(el.value).then(() => {
+        if (hint) { hint.textContent = '已复制'; hint.className = 'ocr-status ok'; setTimeout(() => { hint.textContent = ''; }, 2000); }
+      }).catch(() => {
+        if (hint) hint.textContent = '复制失败';
+      });
+    }
+
+    function aggregateItemsByName(items) {
+      const byName = new Map();
+      for (const it of items) {
+        const name = String(it.name || '').trim() || '（未命名）';
+        const amount = parseAmount(it.amount);
+        if (byName.has(name)) {
+          byName.set(name, byName.get(name) + amount);
+        } else {
+          byName.set(name, amount);
+        }
+      }
+      return Array.from(byName.entries()).map(([name, amount]) => ({ name, amount: roundAmount(amount) })).filter(it => it.name && it.name !== '（未命名）');
+    }
+
+    function setOcrStatus(text, type) {
+      const el = document.getElementById('ocrStatus');
+      el.textContent = text;
+      el.className = 'ocr-status ' + (type || '');
+    }
+
+    function runTesseractOcr(file) {
+      return new Promise((resolve, reject) => {
+        if (typeof Tesseract === 'undefined') {
+          reject(new Error('请联网加载 Tesseract.js 后再试'));
+          return;
+        }
+        Tesseract.recognize(file, 'chi_sim+eng', {
+          logger: m => { if (m.status === 'recognizing text') setOcrStatus('OCR 识别中 ' + (m.progress ? Math.round(m.progress * 100) + '%' : '…'), 'loading'); }
+        }).then(result => resolve(result.data.text || '')).catch(reject);
+      });
+    }
+
+    // 本地 CORS 代理：先运行 node fund-tracker-proxy.js 再使用
+    const DASHSCOPE_PROXY = 'http://localhost:3123';
+
+    async function qwenParseFunds(apiKey, ocrText) {
+      const prompt = '从下面这段从持仓截图 OCR 得到的文本中，提取出每只基金（或理财产品）的名称和持仓金额（元）。只输出一个 JSON，不要其他任何文字，格式：{"items":[{"name":"基金或产品全称","amount":数字}]}。金额为纯数字，如 10000.50。若没有金额则 amount 用 0。\n\nOCR 文本：\n' + ocrText;
+      const url = (DASHSCOPE_PROXY || '').replace(/\/$/, '') + '/api/dashscope/generation';
+      const body = {
+        model: 'qwen-max',
+        input: {
+          messages: [{ role: 'user', content: prompt }]
+        },
+        parameters: {
+          result_format: 'message'
+        }
+      };
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      const text = await res.text();
+      if (!res.ok) throw new Error(res.status + ' ' + (text || res.statusText));
+      const json = JSON.parse(text);
+      if (json.code && String(json.code) !== '200') throw new Error(json.message || json.code || '请求失败');
+      const content = (json.output && json.output.choices && json.output.choices[0] && json.output.choices[0].message && json.output.choices[0].message.content) ? json.output.choices[0].message.content.trim() : '';
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('接口未返回有效 JSON');
+      const data = JSON.parse(jsonMatch[0]);
+      console.log('qwenParseFunds 解析的 JSON:', JSON.stringify(data, null, 2));
+      const items = data.items || (Array.isArray(data) ? data : []);
+      return items.map(it => ({
+        name: String(it.name != null ? it.name : it.fundName != null ? it.fundName : '').trim(),
+        amount: parseAmount(it.amount != null ? it.amount : it.持仓金额)
+      })).filter(it => it.name || it.amount);
+    }
+
+    function localParseFundsFromOcr(ocrText) {
+      const items = [];
+      const lines = (ocrText || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const amountRe = /[\d,]+\.?\d*/g;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const nums = line.match(amountRe);
+        if (nums && nums.length >= 1) {
+          const lastNum = nums[nums.length - 1].replace(/,/g, '');
+          const amount = parseFloat(lastNum);
+          if (amount >= 1 && amount < 1e9) {
+            const name = line.replace(amountRe, '').trim().replace(/\s+/g, ' ') || ('持仓 ' + (i + 1));
+            if (name.length > 0 && name.length < 80) items.push({ name, amount });
+          }
+        }
+      }
+      return items;
+    }
+
+    const AUTOSTOCK_API = 'https://api.autostock.cn/v1/fund?code=';
+
+    async function fetchFundByCode(code) {
+      if (!code || !String(code).trim()) return null;
+      try {
+        const res = await fetch(AUTOSTOCK_API + encodeURIComponent(String(code).trim()));
+        const json = await res.json();
+        if (json.code === 200 && json.data && json.data.length > 0) {
+          const d = json.data[0];
+          return {
+            dayGrowth: d.dayGrowth != null ? String(d.dayGrowth) : null,
+            expectGrowth: d.expectGrowth != null ? String(d.expectGrowth) : null,
+            netWorthDate: d.netWorthDate || null,
+            expectWorthDate: d.expectWorthDate || null,
+            type: d.type || null
+          };
+        }
+      } catch (e) {
+        console.warn('查询基金涨跌幅失败:', code, e);
+      }
+      return null;
+    }
+
+    function setJsonStatus(text, type) {
+      const el = document.getElementById('jsonStatus');
+      if (!el) return;
+      el.textContent = text || '';
+      el.className = 'ocr-status ' + (type || '');
+    }
+
+    async function addFundsFromJson() {
+      const raw = document.getElementById('jsonInput')?.value?.trim();
+      if (!raw) {
+        setJsonStatus('请输入或粘贴 JSON 数组', 'error');
+        return;
+      }
+      let arr;
+      try {
+        arr = JSON.parse(raw);
+      } catch (e) {
+        setJsonStatus('JSON 格式错误：' + (e.message || e), 'error');
+        return;
+      }
+      if (!Array.isArray(arr)) {
+        setJsonStatus('JSON 须为数组，格式：[{"name":"基金名称","amount":金额}, ...]', 'error');
+        return;
+      }
+      const items = arr.map(it => ({
+        name: String(it.name != null ? it.name : it.fundName != null ? it.fundName : '').trim(),
+        amount: roundAmount(it.amount != null ? it.amount : it.持仓金额)
+      })).filter(it => it.name || it.amount);
+      if (!items.length) {
+        setJsonStatus('未解析到有效条目（需 name 与 amount）', 'error');
+        return;
+      }
+      setJsonStatus('正在合并并查询涨跌幅…', 'loading');
+      try {
+        await mergeOcrIntoTable(items);
+        setJsonStatus('已添加 ' + items.length + ' 条，已与列表合并并计算当日涨跌额', 'ok');
+        setOcrStatus('已从 JSON 添加 ' + items.length + ' 条', 'ok');
+      } catch (err) {
+        setJsonStatus('添加失败：' + (err.message || String(err)), 'error');
+      }
+    }
+
+    function mergeRowsByBaseName(list) {
+      const byBase = new Map();
+      for (const row of list) {
+        const base = getBaseFundName(row.name);
+        if (byBase.has(base)) {
+          const existing = byBase.get(base);
+          existing._amount = roundAmount(parseAmount(existing._amount) + parseAmount(row._amount));
+        } else {
+          byBase.set(base, { ...row, name: base || row.name, _amount: roundAmount(row._amount) });
+        }
+      }
+      return Array.from(byBase.values());
+    }
+
+    async function mergeOcrIntoTable(ocrItems) {
+      await ensureFundDataLoaded();
+      const list = currentFundList.length ? currentFundList.slice() : [];
+      const used = new Set();
+      for (const ocr of ocrItems) {
+        let matched = matchFundName(ocr.name, currentFundList);
+        if (!matched && fundDataList.length) {
+          matched = matchFundName(ocr.name, fundDataList);
+        }
+        if (matched) {
+          const base = getBaseFundName(matched.name);
+          const idx = list.findIndex(f => getBaseFundName(f.name) === base);
+          if (idx >= 0) {
+            list[idx]._amount = roundAmount(parseAmount(list[idx]._amount) + parseAmount(ocr.amount));
+          } else {
+            list.push({ ...matched, name: base || matched.name, _amount: roundAmount(ocr.amount) });
+          }
+          used.add(matched.code || matched.name);
+        } else {
+          list.push({
+            name: ocr.name || '（未匹配）',
+            _amount: roundAmount(ocr.amount),
+            dayGrowth: null,
+            expectGrowth: null,
+            netWorthDate: null,
+            expectWorthDate: null,
+            code: null,
+            type: null
+          });
+        }
+      }
+      const merged = mergeRowsByBaseName(list);
+      const withCode = merged.filter(r => r.code);
+      if (withCode.length) {
+        setOcrStatus('正在查询当日涨跌幅…', 'loading');
+        for (const row of withCode) {
+          if (row.dayGrowth == null && row.expectGrowth == null) {
+            const info = await fetchFundByCode(row.code);
+            if (info) {
+              row.dayGrowth = info.dayGrowth;
+              row.expectGrowth = info.expectGrowth;
+              row.netWorthDate = info.netWorthDate;
+              row.expectWorthDate = info.expectWorthDate;
+              if (info.type) row.type = info.type;
+            }
+          }
+        }
+      }
+      renderTable(merged);
+    }
+  </script>
+</body>
+</html>
