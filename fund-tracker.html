@@ -542,10 +542,7 @@
         return;
       }
       const key = document.getElementById('dashscopeKey').value?.trim();
-      if(!key){
-      key = "sk-e46131b8b26a4f9bb6480ec7ff2114ca";
-      }
-<!--      const key = "sk-e46131b8b26a4f9bb6480ec7ff2114ca";-->
+
       const total = files.length;
       setOcrStatus('已选择 ' + total + ' 张图片，开始识别…', 'loading');
       const allItems = [];
