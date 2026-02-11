@@ -655,8 +655,7 @@
           return;
         }
         const merged = aggregateItemsByName(allItems);
-        const qwenFormat = { items: merged };
-        const summaryJson = JSON.stringify(qwenFormat, null, 2);
+        const summaryJson = JSON.stringify(merged, null, 2);
         const wrap = document.getElementById('batchJsonWrap');
         const resultEl = document.getElementById('batchJsonResult');
         if (wrap && resultEl) {
